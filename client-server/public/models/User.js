@@ -84,6 +84,8 @@ class User {
 
     }
 
+
+
     toJSON () {
 
         let json = {};

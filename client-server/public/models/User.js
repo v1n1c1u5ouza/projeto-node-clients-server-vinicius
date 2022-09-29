@@ -69,7 +69,7 @@ class User {
                     this[name] = new Date(json[name]);
                 break;
                 default:
-                    this[name] = json[name];
+                    if(name.substring(0, 1) === '_') this[name] = json[name];
 
             }
             
@@ -106,51 +106,56 @@ class User {
 
     }
 
-    save(){
+    toJSON () {
 
-        let users = User.getUsersStorage();
+        let json = {};
 
-        if (this.id > 0) {
-            
-            users.map(u=>{
+        Object.keys(this).forEach(key => {
 
-                if (u._id == this.id) {
-
-                    Object.assign(u, this);
-
-                }
-
-                return u;
-
-            });
-
-        } else {
-
-            this._id = this.getNewID();
-
-            users.push(this);
-
-        }
-
-        localStorage.setItem("users", JSON.stringify(users));
-
-    }
-
-    remove(){
-
-        let users = User.getUsersStorage();
-
-        users.forEach((userData, index)=>{
-
-            if (this._id == userData._id) {
-
-                users.splice(index, 1);
-
-            }
+            if (this[key] !== undefined) json[key] = this[key];
 
         });
 
-        localStorage.setItem("users", JSON.stringify(users));
+        return json;
+
+    }
+
+    save(){
+
+        return new Promise((resolve, reject) => {
+
+            let promise;
+
+            if (this.id) {
+
+                promise = HttpRequest.put(`/users/${this.id}`, this.toJSON());
+
+            } else {
+
+                promise = HttpRequest.post(`/users`, this.toJSON());
+
+            }
+
+            promise.then(data => {
+
+                this.loadFromJSON(data);
+
+                resolve(this);
+
+            }).catch(e => {
+
+                reject(e);
+
+            });
+
+        });
+
+    }
+
+
+    remove(){
+
+        return HttpRequest.delete(`/users/${this.id}`);
 
     }
 
